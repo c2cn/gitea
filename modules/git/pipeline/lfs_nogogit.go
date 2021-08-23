@@ -72,7 +72,7 @@ func FindLFSFile(repo *git.Repository, hash git.SHA1) ([]*LFSResult, error) {
 
 	fnameBuf := make([]byte, 4096)
 	modeBuf := make([]byte, 40)
-	workingShaBuf := make([]byte, 40)
+	workingShaBuf := make([]byte, 20)
 
 	for scan.Scan() {
 		// Get the next commit ID
@@ -116,6 +116,9 @@ func FindLFSFile(repo *git.Repository, hash git.SHA1) ([]*LFSResult, error) {
 				if err != nil {
 					return nil, err
 				}
+				if _, err := batchReader.Discard(1); err != nil {
+					return nil, err
+				}
 
 				_, err := batchStdinWriter.Write([]byte(curCommit.Tree.ID.String() + "\n"))
 				if err != nil {
@@ -140,9 +143,14 @@ func FindLFSFile(repo *git.Repository, hash git.SHA1) ([]*LFSResult, error) {
 						}
 						resultsMap[curCommit.ID.String()+":"+curPath+string(fname)] = &result
 					} else if string(mode) == git.EntryModeTree.String() {
-						trees = append(trees, git.To40ByteSHA(sha20byte))
+						sha40Byte := make([]byte, 40)
+						git.To40ByteSHA(sha20byte, sha40Byte)
+						trees = append(trees, sha40Byte)
 						paths = append(paths, curPath+string(fname)+"/")
 					}
+				}
+				if _, err := batchReader.Discard(1); err != nil {
+					return nil, err
 				}
 				if len(trees) > 0 {
 					_, err := batchStdinWriter.Write(trees[len(trees)-1])

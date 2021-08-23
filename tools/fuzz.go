@@ -12,6 +12,7 @@ import (
 
 	"code.gitea.io/gitea/modules/markup"
 	"code.gitea.io/gitea/modules/markup/markdown"
+	"code.gitea.io/gitea/modules/setting"
 )
 
 // Contains fuzzing functions executed by
@@ -23,7 +24,7 @@ import (
 
 var (
 	renderContext = markup.RenderContext{
-		URLPrefix: "https://example.com",
+		URLPrefix: "https://example.com/go-gitea/gitea",
 		Metas: map[string]string{
 			"user": "go-gitea",
 			"repo": "gitea",
@@ -32,6 +33,7 @@ var (
 )
 
 func FuzzMarkdownRenderRaw(data []byte) int {
+	setting.AppURL = "http://localhost:3000/"
 	err := markdown.RenderRaw(&renderContext, bytes.NewReader(data), io.Discard)
 	if err != nil {
 		return 0
@@ -40,6 +42,7 @@ func FuzzMarkdownRenderRaw(data []byte) int {
 }
 
 func FuzzMarkupPostProcess(data []byte) int {
+	setting.AppURL = "http://localhost:3000/"
 	err := markup.PostProcess(&renderContext, bytes.NewReader(data), io.Discard)
 	if err != nil {
 		return 0
